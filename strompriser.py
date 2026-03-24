@@ -28,7 +28,6 @@ TARIFFS = [0.21] * 6 + [0.34] * 11 + [0.70] * 4 + [0.34] * 3
 
 
 def fetch_prices(start: date, end: date) -> list[dict]:
-    # Build URL manually — urlencode double-encodes the JSON filter and causes 400s
     days = (end - start).days + 1
     end_str = (end + timedelta(days=1)).isoformat()
     url = (
@@ -66,7 +65,6 @@ def bar(p: float, lo: float, hi: float, width: int = 14) -> str:
 
 
 def aggregate_hourly(records: list[dict]) -> list[tuple[int, float]]:
-    """Aggregate 15-min DayAheadPrices records into hourly (hour, DKK/kWh) pairs."""
     buckets: dict[int, list[float]] = defaultdict(list)
     for r in records:
         hour = int(r["TimeDK"][11:13])
