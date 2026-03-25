@@ -30,10 +30,10 @@ TARIFFS = [0.21] * 6 + [0.34] * 11 + [0.70] * 4 + [0.34] * 3
 def fetch_prices(start: date, end: date) -> list[dict]:
     days = (end - start).days + 1
     end_str = (end + timedelta(days=1)).isoformat()
+    print(start, end, days, end_str)
     url = (
         f"https://api.energidataservice.dk/dataset/DayAheadPrices"
         f"?start={start.isoformat()}&end={end_str}"
-        f"&filter={_FILTER}&sort={_SORT}&limit={days * 96}"
     )
     with urllib.request.urlopen(url, timeout=10) as resp:
         data = json.loads(resp.read())

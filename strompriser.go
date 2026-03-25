@@ -33,7 +33,6 @@ var tariffs = [24]float64{
 	0.34, 0.34, 0.34, // 21–23
 }
 
-// Pre-encoded — inserting directly into URL avoids double-encoding
 var (
 	apiFilter = url.QueryEscape(`{"PriceArea":"DK1"}`)
 	apiSort   = strings.ReplaceAll(url.QueryEscape("TimeDK asc"), "+", "%20")
