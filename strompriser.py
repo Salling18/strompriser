@@ -31,7 +31,6 @@ def fetch_prices(start: date, end: date) -> list[dict]:
     days = (end - start).days + 1
     end_str = (end + timedelta(days=1)).isoformat()
     filter_param = urllib.parse.quote('{"PriceArea":"DK1"}')
-    print(start, end, days, end_str)
     url = (
         f"https://api.energidataservice.dk/dataset/DayAheadPrices"
         f"?start={start.isoformat()}&end={end_str}"
