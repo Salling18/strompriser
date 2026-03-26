@@ -33,17 +33,14 @@ var tariffs = [24]float64{
 	0.34, 0.34, 0.34, // 21–23
 }
 
-var (
-	apiFilter = url.QueryEscape(`{"PriceArea":"DK1"}`)
-	apiSort   = strings.ReplaceAll(url.QueryEscape("TimeDK asc"), "+", "%20")
-)
-
 type record struct {
 	TimeDK           string   `json:"TimeDK"`
 	DayAheadPriceDKK *float64 `json:"DayAheadPriceDKK"`
 }
 
 func fetchPrices(start, end time.Time) ([]record, error) {
+	apiFilter := url.QueryEscape(`{"PriceArea":"DK1"}`)
+	apiSort := strings.ReplaceAll(url.QueryEscape("TimeDK asc"), "+", "%20")
 	days := int(end.Sub(start).Hours()/24) + 1
 	rawURL := fmt.Sprintf(
 		"https://api.energidataservice.dk/dataset/DayAheadPrices"+
@@ -67,15 +64,11 @@ func fetchPrices(start, end time.Time) ([]record, error) {
 	return data.Records, json.Unmarshal(body, &data)
 }
 
-func spotDKK(r record) float64 {
+func getSpotPrice(r record) float64 {
 	if r.DayAheadPriceDKK == nil {
 		return 0
 	}
 	return *r.DayAheadPriceDKK / 1000
-}
-
-func medAfgifter(spot float64, hour int) float64 {
-	return spot*(1+moms) + tariffs[hour]
 }
 
 type hourPrice struct {
@@ -87,21 +80,25 @@ func aggregateHourly(records []record) []hourPrice {
 	buckets := map[int][]float64{}
 	for _, r := range records {
 		h := int(r.TimeDK[11]-'0')*10 + int(r.TimeDK[12]-'0')
-		buckets[h] = append(buckets[h], spotDKK(r))
+		buckets[h] = append(buckets[h], getSpotPrice(r))
 	}
-	keys := make([]int, 0, len(buckets))
+	hours := make([]int, 0, len(buckets))
 	for h := range buckets {
-		keys = append(keys, h)
+		hours = append(hours, h)
 	}
-	sort.Ints(keys)
-	out := make([]hourPrice, len(keys))
-	for i, h := range keys {
-		v := buckets[h]
+	sort.Ints(hours)
+	for bucket, value := range buckets {
+		fmt.Println(bucket)
+		fmt.Println(value)
+	}
+	out := make([]hourPrice, len(hours))
+	for i, h := range hours {
+		prices_in_hour := buckets[h]
 		sum := 0.0
-		for _, x := range v {
+		for _, x := range prices_in_hour {
 			sum += x
 		}
-		out[i] = hourPrice{h, sum / float64(len(v))}
+		out[i] = hourPrice{h, sum / float64(len(prices_in_hour))}
 	}
 	return out
 }
@@ -158,7 +155,7 @@ func printDay(records []record, label string, isToday bool) {
 	totals := make([]float64, len(hourly))
 	for i, h := range hourly {
 		prices[i] = h.price * (1 + moms)
-		totals[i] = medAfgifter(h.price, h.hour)
+		totals[i] = prices[i] + tariffs[h.hour]
 	}
 
 	lo, hi := totals[0], totals[0]
